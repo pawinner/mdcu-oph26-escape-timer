@@ -70,6 +70,15 @@
             opacity: 0.6;
             pointer-events: none;
         }
+
+        /* Penalty flash effect (separate IN / OUT control) */
+        body {
+            background-color: #1a1a1a;
+        }
+
+        body.penalty-flash {
+            background-color: #ec1717 !important;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +96,7 @@
     <div class="controls">
         <button id="playPauseBtn" onclick="togglePlay()">Play</button>
         <button id="penaltyBtn" onclick="applyPenalty()">-20% Penalty</button>
+        <!--style="display: none;"-->
     </div>
 
     <script>
@@ -114,6 +124,11 @@
 
         var player;
         var isPlaying = false;
+
+        // Penalty sound
+        const penaltySound = new Audio("https://www.myinstants.com/media/sounds/wrong-lie-incorrect-buzzer.mp3");
+        penaltySound.volume = 0.35; // 🔊 adjust volume here (0.0 – 1.0)
+        penaltySound.preload = "auto";
 
         // 2. This function creates an <iframe> (and YouTube player)
         //    after the API code downloads.
@@ -173,12 +188,48 @@
                 // New time is the current time PLUS the penalty (skipping forward)
                 const newTime = currentTime + penaltySeconds;
 
+                // Play penalty sound
+                penaltySound.currentTime = 0; // rewind in case of rapid penalties
+                penaltySound.play().catch(() => {});
+
+                // Flash red background instantly (NO fade-in)
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("penalty-flash");
+
+                // Hold red screen, then fade OUT only
+                setTimeout(() => {
+                    // Fade-out duration (change this)
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("penalty-flash");
+                }, 5000);
+
                 console.log(`Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
                 
                 // Seek to the new time (true = allow seeking past buffered range)
                 player.seekTo(newTime, true);
             }
         }
+
+        // HOTKEYS
+        // P = Play / Pause
+        // Shift + X = Apply Penalty
+        document.addEventListener('keydown', function (event) {
+            // Ignore key presses when typing in inputs (future-proofing)
+            const tag = document.activeElement.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea') return;
+
+            // Play / Pause with P key
+            if (event.key.toLowerCase() === 'p') {
+                event.preventDefault();
+                togglePlay();
+            }
+
+            // Penalty with Shift + X
+            if (event.shiftKey && event.key.toLowerCase() === 'x') {
+                event.preventDefault();
+                applyPenalty();
+            }
+        });
     </script>
 </body>
 </html>
