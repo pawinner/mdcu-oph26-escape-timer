@@ -49,7 +49,7 @@
             transition: transform 0.1s, background-color 0.2s;
             font-family: lexend, sans-serif;
         }
-        #playPauseBtn { background-color: #2ecc71; color: white; }
+        #playPauseBtn { background-color: #2ea4cc; color: white; }
         #playPauseBtn:hover { background-color: #27ae60; }
         
         #penaltyBtn { background-color: #e74c3c; color: white; }
@@ -79,6 +79,9 @@
         body.penalty-flash {
             background-color: #ec1717 !important;
         }
+        body.correct-flash {
+            background-color: #13b43e !important;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +99,7 @@
     <div class="controls">
         <button id="playPauseBtn" onclick="togglePlay()">Play</button>
         <button id="penaltyBtn" onclick="applyPenalty()">-20% Penalty</button>
+        <button id="correctBtn" onclick="applyCorrect()" style="background-color:#2ecc71;color:white;">✓ Correct</button>
         <!--style="display: none;"-->
     </div>
 
@@ -129,6 +133,11 @@
         const penaltySound = new Audio("https://www.myinstants.com/media/sounds/wrong-lie-incorrect-buzzer.mp3");
         penaltySound.volume = 0.35; // 🔊 adjust volume here (0.0 – 1.0)
         penaltySound.preload = "auto";
+
+        // Correct sound
+        const correctSound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
+        correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
+        correctSound.preload = "auto";
 
         // 2. This function creates an <iframe> (and YouTube player)
         //    after the API code downloads.
@@ -167,7 +176,7 @@
             } else {
                 isPlaying = false;
                 btn.innerText = "Play";
-                btn.style.backgroundColor = "#2ecc71";
+                btn.style.backgroundColor = "#2ea4cc";
             }
         }
 
@@ -210,6 +219,23 @@
             }
         }
 
+        // CORRECT ANSWER (no timer changes)
+        function applyCorrect() {
+            // Play correct sound
+            correctSound.currentTime = 0;
+            correctSound.play().catch(() => {});
+
+            // Flash green background instantly
+            document.body.style.transition = "background-color 0.5s ease";
+            document.body.classList.add("correct-flash");
+
+            // Hold green screen, then fade OUT only
+            setTimeout(() => {
+                document.body.style.transition = "background-color 1.5s ease";
+                document.body.classList.remove("correct-flash");
+            }, 3000);
+        }
+
         // HOTKEYS
         // P = Play / Pause
         // Shift + X = Apply Penalty
@@ -228,6 +254,12 @@
             if (event.shiftKey && event.key.toLowerCase() === 'x') {
                 event.preventDefault();
                 applyPenalty();
+            }
+
+            // Correct with Shift + C
+            if (event.shiftKey && event.key.toLowerCase() === 'c') {
+                event.preventDefault();
+                applyCorrect();
             }
         });
     </script>
