@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube Countdown Timer</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding-top: 30px;
+    }
+
+    #player {
+      margin-bottom: 20px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Countdown Timer</h1>
+
+  <div id="player"></div>
+
+  <div>
+    <button id="playPauseBtn">Play</button>
+    <button id="penaltyBtn">−20%</button>
+  </div>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    let player;
+    let isPlaying = false;
+
+    // CHANGE THIS VIDEO ID ANYTIME
+    const VIDEO_ID = "idyfgQdL-Mo";
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player("player", {
+        height: "360",
+        width: "640",
+        videoId: VIDEO_ID,
+        playerVars: {
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          rel: 0
+        },
+        events: {
+          onReady: onPlayerReady
+        }
+      });
+    }
+
+    function onPlayerReady() {
+      document.getElementById("playPauseBtn").onclick = togglePlayPause;
+      document.getElementById("penaltyBtn").onclick = applyPenalty;
+    }
+
+    function togglePlayPause() {
+      if (!player) return;
+
+      if (isPlaying) {
+        player.pauseVideo();
+        document.getElementById("playPauseBtn").innerText = "Play";
+      } else {
+        player.playVideo();
+        document.getElementById("playPauseBtn").innerText = "Pause";
+      }
+      isPlaying = !isPlaying;
+    }
+
+    function applyPenalty() {
+      if (!player) return;
+
+      const duration = player.getDuration();      // total video length
+      const current = player.getCurrentTime();    // current playback time
+
+      if (duration === 0) return;
+
+      const remaining = duration - current;
+      const penalty = remaining * 0.2;
+      const newTime = current + penalty;
+
+      // Prevent seeking past the end
+      player.seekTo(Math.min(newTime, duration - 0.1), true);
+    }
+  </script>
+
+</body>
+</html>
