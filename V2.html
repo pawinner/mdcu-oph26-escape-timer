@@ -82,6 +82,42 @@
         body.correct-flash {
             background-color: #13b43e !important;
         }
+
+        /* Penalty overlay (-20%) */
+        #penalty-overlay {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 40px 50px;
+            background: rgba(0, 0, 0, 0.75);
+            border-radius: 8px;
+
+            color: white;
+            font-size: 80px;
+            font-weight: bold;
+
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-10px);
+
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 9999;
+        }
+
+        #penalty-overlay img {
+            width: 85px;
+            height: 85px;
+        }
+
+        #penalty-overlay.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body>
@@ -92,6 +128,10 @@
     <h1></h1>
 
     <div id="clock">00:00:00</div>
+    <div id="penalty-overlay">
+        <img src="https://img.icons8.com/m_outlined/512/FFFFFF/clock--v2.png" alt="Clock">
+        <span>-20%</span>
+    </div>
     <div id="player-container">
         <div id="player"></div>
     </div>
@@ -134,10 +174,28 @@
         penaltySound.volume = 0.35; // 🔊 adjust volume here (0.0 – 1.0)
         penaltySound.preload = "auto";
 
+        // Minor penalty (5%) sound
+        const penalty5Sound = new Audio("https://www.myinstants.com/media/sounds/fahhhhhhhhhhhhhh.mp3");
+        penalty5Sound.volume = 0.35;
+        penalty5Sound.preload = "auto";
+
         // Correct sound
         const correctSound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
         correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
         correctSound.preload = "auto";
+
+        // Show -20% penalty overlay
+        function showPenaltyOverlay(label = "-20%", duration = 4000) {
+            const overlay = document.getElementById("penalty-overlay");
+            if (!overlay) return;
+
+            overlay.querySelector("span").innerText = label;
+            overlay.classList.add("show");
+
+            setTimeout(() => {
+                overlay.classList.remove("show");
+            }, duration);
+        }
 
         // 2. This function creates an <iframe> (and YouTube player)
         //    after the API code downloads.
@@ -200,6 +258,7 @@
                 // Play penalty sound
                 penaltySound.currentTime = 0; // rewind in case of rapid penalties
                 penaltySound.play().catch(() => {});
+                showPenaltyOverlay("-20%", 4000);
 
                 // Flash red background instantly (NO fade-in)
                 document.body.style.transition = "background-color 0.5s ease";
@@ -215,6 +274,41 @@
                 console.log(`Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
                 
                 // Seek to the new time (true = allow seeking past buffered range)
+                player.seekTo(newTime, true);
+            }
+        }
+
+        // 4. MINOR PENALTY LOGIC: Deduct 5% of CURRENT time left
+        function applyPenalty5() {
+            if (!player) return;
+
+            const duration = player.getDuration();
+            const currentTime = player.getCurrentTime();
+            
+            const timeLeft = duration - currentTime;
+
+            if (timeLeft > 0) {
+                const penaltySeconds = timeLeft * 0.05;
+                const newTime = currentTime + penaltySeconds;
+
+                // Play 5% penalty sound
+                penalty5Sound.currentTime = 0;
+                penalty5Sound.play().catch(() => {});
+
+                // Show overlay (-5%)
+                showPenaltyOverlay("-5%", 4000);
+
+                // Flash red background instantly
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("penalty-flash");
+
+                // Hold red screen, then fade OUT only
+                setTimeout(() => {
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("penalty-flash");
+                }, 5000);
+
+                console.log(`5% Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
                 player.seekTo(newTime, true);
             }
         }
@@ -254,6 +348,12 @@
             if (event.shiftKey && event.key.toLowerCase() === 'x') {
                 event.preventDefault();
                 applyPenalty();
+            }
+
+            // Minor penalty with Shift + Z
+            if (event.shiftKey && event.key.toLowerCase() === 'z') {
+                event.preventDefault();
+                applyPenalty5();
             }
 
             // Correct with Shift + C
