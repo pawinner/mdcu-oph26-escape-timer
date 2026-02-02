@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDCU OPH 2026 - Escape Room: Countdown Timer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/images/clockicon.png">
+    <style>
+        body {
+            font-family: lexend, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: white;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            text-shadow: 2px 2px 5px #717171;
+        }
+        h2 {
+            text-align: center;
+            text-shadow: 2px 2px 4px #676767;
+        }
+        #player-container {
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            font-family: lexend ,sans-serif;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: transform 0.1s, background-color 0.2s;
+            font-family: lexend, sans-serif;
+        }
+        #playPauseBtn { background-color: #2ea4cc; color: white; }
+        #playPauseBtn:hover { background-color: #27ae60; }
+        
+        #penaltyBtn { background-color: #e74c3c; color: white; }
+        #penaltyBtn:hover { background-color: #c0392b; }
+        
+        button:active { transform: scale(0.95); }
+
+        #clock {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            width: 120px;
+            text-align: left;
+            font-size: 1.7em;
+            font-weight: 500;
+            color: #ffffff;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Penalty flash effect (separate IN / OUT control) */
+        body {
+            background-color: #1a1a1a;
+        }
+
+        body.penalty-flash {
+            background-color: #ec1717 !important;
+        }
+        body.correct-flash {
+            background-color: #13b43e !important;
+        }
+
+        /* Penalty overlay (-20%) */
+        #penalty-overlay {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 40px 50px;
+            background: rgba(0, 0, 0, 0.75);
+            border-radius: 8px;
+
+            color: white;
+            font-size: 80px;
+            font-weight: bold;
+
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-10px);
+
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 9999;
+        }
+
+        #penalty-overlay img {
+            width: 85px;
+            height: 85px;
+        }
+
+        #penalty-overlay.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="color:rgb(0, 134, 4); font-size: 2.7em; margin-bottom: 0em;">Welcome to</h2>
+    <h1 style="color:rgb(222, 92, 142); font-size: 3.9em; margin-top: 0.35em; margin-bottom: 0em;">Escape Room</h1>
+    <h1 style="color:rgb(251, 181, 201); font-size: 2.9em; margin-top: 0.3em; margin-bottom: 0em; align-items: center;">MDCU Open House 2026</h1>
+    <h1></h1>
+
+    <div id="clock">00:00:00</div>
+    <div id="penalty-overlay">
+        <img src="https://img.icons8.com/m_outlined/512/FFFFFF/clock--v2.png" alt="Clock">
+        <span>-20%</span>
+    </div>
+    <div id="player-container">
+        <div id="player"></div>
+    </div>
+
+    <div class="controls">
+        <button id="playPauseBtn" onclick="togglePlay()">Play</button>
+        <button id="penaltyBtn" onclick="applyPenalty()">-20% Penalty</button>
+        <button id="correctBtn" onclick="applyCorrect()" style="background-color:#2ecc71;color:white;">✓ Correct</button>
+        <!--style="display: none;"-->
+    </div>
+
+    <script>
+        // LIVE REAL-TIME CLOCK (HH:MM:SS)
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // CONFIGURATION: Change the Video ID here
+        const videoId = 'idyfgQdL-Mo'; 
+
+        // 1. Load the IFrame Player API code asynchronously
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        var isPlaying = false;
+
+        // Penalty sound
+        const penaltySound = new Audio("https://www.myinstants.com/media/sounds/wrong-lie-incorrect-buzzer.mp3");
+        penaltySound.volume = 0.35; // 🔊 adjust volume here (0.0 – 1.0)
+        penaltySound.preload = "auto";
+
+        // Minor penalty (5%) sound
+        const penalty5Sound = new Audio("https://www.myinstants.com/media/sounds/fahhhhhhhhhhhhhh.mp3");
+        penalty5Sound.volume = 0.35;
+        penalty5Sound.preload = "auto";
+
+        // Correct sound
+        const correctSound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
+        correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
+        correctSound.preload = "auto";
+
+        // Show -20% penalty overlay
+        function showPenaltyOverlay(label = "-20%", duration = 4000) {
+            const overlay = document.getElementById("penalty-overlay");
+            if (!overlay) return;
+
+            overlay.querySelector("span").innerText = label;
+            overlay.classList.add("show");
+
+            setTimeout(() => {
+                overlay.classList.remove("show");
+            }, duration);
+        }
+
+        // 2. This function creates an <iframe> (and YouTube player)
+        //    after the API code downloads.
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '480',
+                width: '853.3',
+                videoId: videoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0, // Hide default YT controls
+                    'disablekb': 1
+                },
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // Handle Play/Pause Logic
+        function togglePlay() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        // Update button text based on video state
+        function onPlayerStateChange(event) {
+            const btn = document.getElementById('playPauseBtn');
+            if (event.data == YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                btn.innerText = "Pause";
+                btn.style.backgroundColor = "#f39c12";
+            } else {
+                isPlaying = false;
+                btn.innerText = "Play";
+                btn.style.backgroundColor = "#2ea4cc";
+            }
+        }
+
+        // 3. PENALTY LOGIC: Deduct 20% of CURRENT time left
+        function applyPenalty() {
+            if (!player) return;
+
+            const duration = player.getDuration();
+            const currentTime = player.getCurrentTime();
+            
+            // Calculate remaining time
+            const timeLeft = duration - currentTime;
+
+            if (timeLeft > 0) {
+                // Calculate 20% of the remaining time
+                const penaltySeconds = timeLeft * 0.20;
+                
+                // New time is the current time PLUS the penalty (skipping forward)
+                const newTime = currentTime + penaltySeconds;
+
+                // Play penalty sound
+                penaltySound.currentTime = 0; // rewind in case of rapid penalties
+                penaltySound.play().catch(() => {});
+                showPenaltyOverlay("-20%", 4000);
+
+                // Flash red background instantly (NO fade-in)
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("penalty-flash");
+
+                // Hold red screen, then fade OUT only
+                setTimeout(() => {
+                    // Fade-out duration (change this)
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("penalty-flash");
+                }, 5000);
+
+                console.log(`Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
+                
+                // Seek to the new time (true = allow seeking past buffered range)
+                player.seekTo(newTime, true);
+            }
+        }
+
+        // 4. MINOR PENALTY LOGIC: Deduct 5% of CURRENT time left
+        function applyPenalty5() {
+            if (!player) return;
+
+            const duration = player.getDuration();
+            const currentTime = player.getCurrentTime();
+            
+            const timeLeft = duration - currentTime;
+
+            if (timeLeft > 0) {
+                const penaltySeconds = timeLeft * 0.05;
+                const newTime = currentTime + penaltySeconds;
+
+                // Play 5% penalty sound
+                penalty5Sound.currentTime = 0;
+                penalty5Sound.play().catch(() => {});
+
+                // Show overlay (-5%)
+                showPenaltyOverlay("-5%", 4000);
+
+                // Flash red background instantly
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("penalty-flash");
+
+                // Hold red screen, then fade OUT only
+                setTimeout(() => {
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("penalty-flash");
+                }, 5000);
+
+                console.log(`5% Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
+                player.seekTo(newTime, true);
+            }
+        }
+
+        // CORRECT ANSWER (no timer changes)
+        function applyCorrect() {
+            // Play correct sound
+            correctSound.currentTime = 0;
+            correctSound.play().catch(() => {});
+
+            // Flash green background instantly
+            document.body.style.transition = "background-color 0.5s ease";
+            document.body.classList.add("correct-flash");
+
+            // Hold green screen, then fade OUT only
+            setTimeout(() => {
+                document.body.style.transition = "background-color 1.5s ease";
+                document.body.classList.remove("correct-flash");
+            }, 3000);
+        }
+
+        // HOTKEYS
+        // P = Play / Pause
+        // Shift + X = Apply Penalty
+        document.addEventListener('keydown', function (event) {
+            // Ignore key presses when typing in inputs (future-proofing)
+            const tag = document.activeElement.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea') return;
+
+            // Play / Pause with P key
+            if (event.key.toLowerCase() === 'p') {
+                event.preventDefault();
+                togglePlay();
+            }
+
+            // Penalty with Shift + X
+            if (event.shiftKey && event.key.toLowerCase() === 'x') {
+                event.preventDefault();
+                applyPenalty();
+            }
+
+            // Minor penalty with Shift + Z
+            if (event.shiftKey && event.key.toLowerCase() === 'z') {
+                event.preventDefault();
+                applyPenalty5();
+            }
+
+            // Correct with Shift + C
+            if (event.shiftKey && event.key.toLowerCase() === 'c') {
+                event.preventDefault();
+                applyCorrect();
+            }
+        });
+    </script>
+</body>
+</html>
