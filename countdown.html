@@ -33,6 +33,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border-radius: 8px;
             overflow: hidden;
+            transition: filter 0.6s ease;
+        }
+        /* Dim video when checking answer */
+        body.check-mode #player-container {
+            filter: brightness(0.25) blur(4px);
+            transition: filter 0.6s ease;
         }
         .controls {
             display: flex;
@@ -118,6 +124,92 @@
             opacity: 1;
             transform: translateX(0);
         }
+
+        /* ANSWER CHECK OVERLAY (INTENSE PAUSE SCREEN) */
+        #check-overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,0.05), rgba(0,0,0,0.98)),
+                linear-gradient(
+                    rgba(0,0,0,0.65),
+                    rgba(0,0,0,0.65)
+                );
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+            z-index: 9998;
+        }
+
+        #check-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #check-overlay h1 {
+            font-size: 4em;
+            letter-spacing: 6px;
+            color: #ffffff;
+            text-shadow:
+                0 0 8px rgba(0,0,0,0.9),
+                0 0 25px rgba(255,255,255,0.5),
+                0 0 60px rgba(255,255,255,0.25);
+            animation: pulseText 2s ease-in-out infinite;
+        }
+
+        #check-overlay .sub {
+            font-size: 1.4em;
+            letter-spacing: 4px;
+            opacity: 0.85;
+            text-shadow: 0 0 10px rgba(0,0,0,0.9);
+        }
+
+        /* WIN MODE OVERLAY */
+        #win-overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,0.08), rgba(0,0,0,0.98)),
+                linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+            z-index: 9999;
+        }
+
+        #win-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #win-overlay h1 {
+            font-size: 4.2em;
+            letter-spacing: 6px;
+            color: #ffffff;
+            text-shadow:
+                0 0 10px rgba(0,0,0,0.9),
+                0 0 30px rgba(255,255,255,0.5),
+                0 0 70px rgba(255,255,255,0.3);
+            animation: pulseText 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
     </style>
 </head>
 <body>
@@ -134,6 +226,15 @@
     </div>
     <div id="player-container">
         <div id="player"></div>
+    </div>
+
+    <div id="check-overlay">
+        <h1>CHECKING ANSWER</h1>
+        <div class="sub">PLEASE STAND BY</div>
+    </div>
+
+    <div id="win-overlay">
+        <h1>CONGRATULATIONS</h1>
     </div>
 
     <div class="controls">
@@ -168,6 +269,11 @@
 
         var player;
         var isPlaying = false;
+        var isCheckModeActive = false;
+        var isWinModeActive = false;
+        var hasStartedPlayback = false;
+
+        const REVEAL_DELAY_MS = 1000; // 1 second calm-before-reveal
 
         // Penalty sound
         const penaltySound = new Audio("https://www.myinstants.com/media/sounds/wrong-lie-incorrect-buzzer.mp3");
@@ -183,6 +289,12 @@
         const correctSound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
         correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
         correctSound.preload = "auto";
+
+        // Intense check music
+        const checkMusic = new Audio("assets/sounds/wwtbam64000q.mp3");
+        checkMusic.loop = true;
+        checkMusic.volume = 0.45;
+        checkMusic.preload = "auto";
 
         // Show -20% penalty overlay
         function showPenaltyOverlay(label = "-20%", duration = 4000) {
@@ -219,63 +331,110 @@
         function togglePlay() {
             if (isPlaying) {
                 player.pauseVideo();
+                enterCheckMode();
             } else {
                 player.playVideo();
+                exitCheckMode();
             }
+        }
+
+        function enterCheckMode() {
+            if (isCheckModeActive || isWinModeActive) return;
+            if (!hasStartedPlayback) return; // prevent startup flash
+
+            isCheckModeActive = true;
+            document.body.classList.add("check-mode");
+
+            const overlay = document.getElementById("check-overlay");
+            overlay.classList.add("show");
+
+            document.body.style.transition = "background-color 0.6s ease";
+            document.body.style.backgroundColor = "#000000";
+
+            checkMusic.currentTime = 0;
+            checkMusic.play().catch(() => {});
+        }
+
+        function exitCheckMode() {
+            if (!isCheckModeActive) return;
+
+            isCheckModeActive = false;
+            document.body.classList.remove("check-mode");
+
+            const overlay = document.getElementById("check-overlay");
+            overlay.classList.remove("show");
+
+            checkMusic.pause();
+            checkMusic.currentTime = 0;
+
+            document.body.style.backgroundColor = "#1a1a1a";
         }
 
         // Update button text based on video state
         function onPlayerStateChange(event) {
             const btn = document.getElementById('playPauseBtn');
-            if (event.data == YT.PlayerState.PLAYING) {
+
+            if (event.data === YT.PlayerState.PLAYING) {
+                hasStartedPlayback = true;
                 isPlaying = true;
+
                 btn.innerText = "Pause";
                 btn.style.backgroundColor = "#f39c12";
-            } else {
+
+                exitCheckMode();
+                return;
+            }
+
+            if (event.data === YT.PlayerState.PAUSED) {
                 isPlaying = false;
+
                 btn.innerText = "Play";
                 btn.style.backgroundColor = "#2ea4cc";
+
+                enterCheckMode();
+                return;
             }
         }
 
-        // 3. PENALTY LOGIC: Deduct 20% of CURRENT time left
+        // 3. PENALTY LOGIC: Deduct 20% of CURRENT time left (delayed jump + resume until after graphics)
         function applyPenalty() {
             if (!player) return;
 
             const duration = player.getDuration();
             const currentTime = player.getCurrentTime();
-            
-            // Calculate remaining time
             const timeLeft = duration - currentTime;
 
-            if (timeLeft > 0) {
-                // Calculate 20% of the remaining time
-                const penaltySeconds = timeLeft * 0.20;
-                
-                // New time is the current time PLUS the penalty (skipping forward)
-                const newTime = currentTime + penaltySeconds;
+            if (timeLeft <= 0) return;
 
-                // Play penalty sound
-                penaltySound.currentTime = 0; // rewind in case of rapid penalties
+            // Calculate penalty but DO NOT apply yet
+            const penaltySeconds = timeLeft * 0.20;
+            const targetTime = currentTime + penaltySeconds;
+
+            // Ensure everything is visually normal first
+            exitCheckMode();
+            if (player) player.pauseVideo();
+
+            // Calm beat before punishment
+            setTimeout(() => {
+                // Reveal penalty
+                penaltySound.currentTime = 0;
                 penaltySound.play().catch(() => {});
                 showPenaltyOverlay("-20%", 4000);
 
-                // Flash red background instantly (NO fade-in)
                 document.body.style.transition = "background-color 0.5s ease";
                 document.body.classList.add("penalty-flash");
 
-                // Hold red screen, then fade OUT only
                 setTimeout(() => {
-                    // Fade-out duration (change this)
                     document.body.style.transition = "background-color 1.5s ease";
                     document.body.classList.remove("penalty-flash");
                 }, 5000);
 
-                console.log(`Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
-                
-                // Seek to the new time (true = allow seeking past buffered range)
-                player.seekTo(newTime, true);
-            }
+                // AFTER reveal → apply penalty + resume
+                setTimeout(() => {
+                    player.seekTo(targetTime, true);
+                    player.playVideo();
+                }, 400);
+            }, REVEAL_DELAY_MS);
         }
 
         // 4. MINOR PENALTY LOGIC: Deduct 5% of CURRENT time left
@@ -310,24 +469,53 @@
 
                 console.log(`5% Penalty Applied: Skipping ${Math.round(penaltySeconds)} seconds.`);
                 player.seekTo(newTime, true);
+                exitCheckMode();
+                setTimeout(() => player.playVideo(), 50);
             }
         }
 
-        // CORRECT ANSWER (no timer changes)
+        // CORRECT ANSWER (Win Mode)
         function applyCorrect() {
-            // Play correct sound
-            correctSound.currentTime = 0;
-            correctSound.play().catch(() => {});
+            exitCheckMode();
 
-            // Flash green background instantly
-            document.body.style.transition = "background-color 0.5s ease";
-            document.body.classList.add("correct-flash");
-
-            // Hold green screen, then fade OUT only
+            // Calm beat before celebration
             setTimeout(() => {
-                document.body.style.transition = "background-color 1.5s ease";
-                document.body.classList.remove("correct-flash");
-            }, 3000);
+                // Play correct sound
+                correctSound.currentTime = 0;
+                correctSound.play().catch(() => {});
+
+                // Flash green background
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("correct-flash");
+
+                setTimeout(() => {
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("correct-flash");
+                }, 3000);
+
+                enterWinMode();
+            }, REVEAL_DELAY_MS);
+        }
+
+        function enterWinMode() {
+            isWinModeActive = true;
+            exitCheckMode();
+
+            document.body.classList.add("check-mode");
+
+            const win = document.getElementById("win-overlay");
+            win.classList.add("show");
+
+            if (player) player.pauseVideo();
+            checkMusic.pause();
+            checkMusic.currentTime = 0;
+        }
+
+        function exitWinMode() {
+            isWinModeActive = false;
+
+            const win = document.getElementById("win-overlay");
+            win.classList.remove("show");
         }
 
         // HOTKEYS
