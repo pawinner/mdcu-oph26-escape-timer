@@ -85,8 +85,26 @@
         body.penalty-flash {
             background-color: #ec1717 !important;
         }
-        body.correct-flash {
-            background-color: #13b43e !important;
+
+        body.correct-flash #check-overlay,
+        body.correct-flash #win-overlay {
+            background: transparent !important;
+        }
+        /* green flash layer (always exists) */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(19, 180, 62, 0.65);
+            z-index: 9997;
+            pointer-events: none;
+
+            opacity: 0;
+        }
+
+        /* fade IN when correct */
+        body.correct-flash::before {
+            animation: greenBlink 1.4s ease-in-out infinite;
         }
 
         /* Penalty overlay (-20%) */
@@ -210,6 +228,14 @@
             50% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 0.8; }
         }
+
+        @keyframes greenBlink {
+            0%   { opacity: 0; }
+            30%  { opacity: 1; }
+            60%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -488,10 +514,7 @@
                 document.body.style.transition = "background-color 0.5s ease";
                 document.body.classList.add("correct-flash");
 
-                setTimeout(() => {
-                    document.body.style.transition = "background-color 1.5s ease";
-                    document.body.classList.remove("correct-flash");
-                }, 3000);
+                // Do NOT remove correct-flash automatically; let it blink forever
 
                 enterWinMode();
             }, REVEAL_DELAY_MS);
@@ -513,6 +536,9 @@
 
         function exitWinMode() {
             isWinModeActive = false;
+
+            // Stop green blink when win mode exits
+            document.body.classList.remove("correct-flash");
 
             const win = document.getElementById("win-overlay");
             win.classList.remove("show");
