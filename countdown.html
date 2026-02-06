@@ -236,6 +236,29 @@
             100% { opacity: 0; }
         }
 
+        /* red timeout flash layer (background-level) */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(236, 23, 23, 0.75);
+            z-index: 9996; /* below green, above base background */
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* active when time runs out */
+        body.timeout-flash::after {
+            animation: redBlink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes redBlink {
+            0%   { opacity: 0; }
+            30%  { opacity: 1; }
+            60%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -282,10 +305,11 @@
 
         // Update clock every second
         setInterval(updateClock, 1000);
+        setInterval(checkTimeoutBlink, 500);
         updateClock();
 
         // CONFIGURATION: Change the Video ID here
-        const videoId = 'idyfgQdL-Mo'; 
+        const videoId = 'fXXlVs9f43I'; 
 
         // 1. Load the IFrame Player API code asynchronously
         var tag = document.createElement('script');
@@ -321,6 +345,9 @@
         checkMusic.loop = true;
         checkMusic.volume = 0.5;
         checkMusic.preload = "auto";
+
+        const TIMEOUT_TRIGGER_SEC = (45 * 60) + 6; // 45:06
+        let timeoutTriggered = false;
 
         // Show -20% penalty overlay
         function showPenaltyOverlay(label = "-20%", duration = 4000) {
@@ -542,6 +569,18 @@
 
             const win = document.getElementById("win-overlay");
             win.classList.remove("show");
+        }
+
+        function checkTimeoutBlink() {
+            if (!player || timeoutTriggered) return;
+
+            const current = player.getCurrentTime();
+            if (current >= TIMEOUT_TRIGGER_SEC) {
+            timeoutTriggered = true;
+
+                // Red blink only — video keeps playing
+                document.body.classList.add("timeout-flash");
+            }
         }
 
         // HOTKEYS
