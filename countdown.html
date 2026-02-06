@@ -282,18 +282,18 @@
 
         // Minor penalty (5%) sound
         const penalty5Sound = new Audio("https://www.myinstants.com/media/sounds/campana.mp3");
-        penalty5Sound.volume = 0.35;
+        penalty5Sound.volume = 0.30; // 🔔 adjust volume here (0.0 – 1.0)
         penalty5Sound.preload = "auto";
 
         // Correct sound
-        const correctSound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
+        const correctSound = new Audio("assets/sounds/WinSFX.mp3");
         correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
         correctSound.preload = "auto";
 
         // Intense check music
         const checkMusic = new Audio("assets/sounds/wwtbam64000q.mp3");
         checkMusic.loop = true;
-        checkMusic.volume = 0.45;
+        checkMusic.volume = 0.5;
         checkMusic.preload = "auto";
 
         // Show -20% penalty overlay
