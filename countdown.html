@@ -460,7 +460,7 @@
             if (timeLeft <= 0) return;
 
             // Calculate penalty but DO NOT apply yet
-            const penaltySeconds = timeLeft * 0.20;
+            const penaltySeconds = timeLeft * 0.19;
             const targetTime = currentTime + penaltySeconds;
 
             // Ensure everything is visually normal first
@@ -500,7 +500,7 @@
             const timeLeft = duration - currentTime;
 
             if (timeLeft > 0) {
-                const penaltySeconds = timeLeft * 0.05;
+                const penaltySeconds = timeLeft * 0.04;
                 const newTime = currentTime + penaltySeconds;
 
                 // Play 5% penalty sound
