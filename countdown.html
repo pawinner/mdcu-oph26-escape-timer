@@ -340,6 +340,11 @@
         correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
         correctSound.preload = "auto";
 
+        // Bell sound (Hotkey H)
+        const bellSound = new Audio("assets/sounds/phonering.mp3");
+        bellSound.volume = 1.0
+        bellSound.preload = "auto";
+
         // Intense check music
         const checkMusic = new Audio("assets/sounds/wwtbam64000q.mp3");
         checkMusic.loop = true;
@@ -613,6 +618,13 @@
             if (event.shiftKey && event.key.toLowerCase() === 'c') {
                 event.preventDefault();
                 applyCorrect();
+            }
+
+            // Bell sound with H key
+            if (event.key.toLowerCase() === 'h') {
+                event.preventDefault();
+                bellSound.currentTime = 0;
+                bellSound.play().catch(() => {});
             }
         });
     </script>
