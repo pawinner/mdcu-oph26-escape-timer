@@ -86,6 +86,10 @@
             background-color: #ec1717 !important;
         }
 
+        body.secondary-correct-flash {
+            background-color: #1ecb4f !important;
+        }
+
         body.correct-flash #check-overlay,
         body.correct-flash #win-overlay {
             background: transparent !important;
@@ -339,6 +343,11 @@
         const correctSound = new Audio("assets/sounds/WinSFX.mp3");
         correctSound.volume = 0.4; // 🔔 adjust volume here (0.0 – 1.0)
         correctSound.preload = "auto";
+
+        // Secondary correct sound (Hotkey V)
+        const correct2Sound = new Audio("https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3");
+        correct2Sound.volume = 0.5;
+        correct2Sound.preload = "auto";
 
         // Bell sound (Hotkey H)
         const bellSound = new Audio("assets/sounds/phonering.mp3");
@@ -625,6 +634,25 @@
                 event.preventDefault();
                 bellSound.currentTime = 0;
                 bellSound.play().catch(() => {});
+            }
+
+            // Secondary correct cue with V key (sound only)
+            if (event.key.toLowerCase() === 'v') {
+                event.preventDefault();
+
+                // Play secondary correct sound
+                correct2Sound.currentTime = 0;
+                correct2Sound.play().catch(() => {});
+
+                // Immediate green flash (copied behavior from penalty flash, no delay)
+                document.body.style.transition = "background-color 0.5s ease";
+                document.body.classList.add("secondary-correct-flash");
+
+                // Hold green, then fade OUT only
+                setTimeout(() => {
+                    document.body.style.transition = "background-color 1.5s ease";
+                    document.body.classList.remove("secondary-correct-flash");
+                }, 5000);
             }
         });
     </script>
