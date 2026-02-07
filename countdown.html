@@ -636,23 +636,35 @@
                 bellSound.play().catch(() => {});
             }
 
-            // Secondary correct cue with V key (sound only)
+            // Secondary correct cue with V key (pause → reveal → continue)
             if (event.key.toLowerCase() === 'v') {
                 event.preventDefault();
 
-                // Play secondary correct sound
-                correct2Sound.currentTime = 0;
-                correct2Sound.play().catch(() => {});
+                // Ensure visual state is clean and pause video
+                exitCheckMode();
+                if (player) player.pauseVideo();
 
-                // Immediate green flash (copied behavior from penalty flash, no delay)
-                document.body.style.transition = "background-color 0.5s ease";
-                document.body.classList.add("secondary-correct-flash");
-
-                // Hold green, then fade OUT only
+                // Calm beat before reveal (same as penalty / correct)
                 setTimeout(() => {
-                    document.body.style.transition = "background-color 1.5s ease";
-                    document.body.classList.remove("secondary-correct-flash");
-                }, 5000);
+                    // Play secondary correct sound
+                    correct2Sound.currentTime = 0;
+                    correct2Sound.play().catch(() => {});
+
+                    // Green background flash (penalty-style, no delay)
+                    document.body.style.transition = "background-color 0.5s ease";
+                    document.body.classList.add("secondary-correct-flash");
+
+                    // Hold green, then fade OUT only
+                    setTimeout(() => {
+                        document.body.style.transition = "background-color 1.5s ease";
+                        document.body.classList.remove("secondary-correct-flash");
+                    }, 5000);
+
+                    // Resume video shortly after reveal
+                    setTimeout(() => {
+                        if (player) player.playVideo();
+                    }, 400);
+                }, REVEAL_DELAY_MS);
             }
         });
     </script>
