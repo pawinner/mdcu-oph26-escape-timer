@@ -351,8 +351,13 @@
 
         // Bell sound (Hotkey H)
         const bellSound = new Audio("assets/sounds/phonering.mp3");
-        bellSound.volume = 1.0
+        bellSound.volume = 1.0;
         bellSound.preload = "auto";
+
+        // Comedy hit sound (Hotkey 5)
+        const comedyHitSound = new Audio("assets/sounds/ตลกตบมุก.mp3");
+        comedyHitSound.volume = 0.7;
+        comedyHitSound.preload = "auto";
 
         // Intense check music
         const checkMusic = new Audio("assets/sounds/wwtbam64000q.mp3");
@@ -634,6 +639,13 @@
                 event.preventDefault();
                 bellSound.currentTime = 0;
                 bellSound.play().catch(() => {});
+            }
+
+            // Comedy hit sound with 5 key
+            if (event.key === '5') {
+                event.preventDefault();
+                comedyHitSound.currentTime = 0;
+                comedyHitSound.play().catch(() => {});
             }
 
             // Secondary correct cue with V key (pause → reveal → continue)
