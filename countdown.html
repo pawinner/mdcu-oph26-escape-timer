@@ -359,6 +359,11 @@
         comedyHitSound.volume = 0.7;
         comedyHitSound.preload = "auto";
 
+        // Get out sound (Hotkey 6)
+        const getOutSound = new Audio("assets/sounds/getout.mp3");
+        getOutSound.volume = 1.0;
+        getOutSound.preload = "auto";
+
         // Intense check music
         const checkMusic = new Audio("assets/sounds/wwtbam64000q.mp3");
         checkMusic.loop = true;
@@ -646,6 +651,13 @@
                 event.preventDefault();
                 comedyHitSound.currentTime = 0;
                 comedyHitSound.play().catch(() => {});
+            }
+
+            // Get out sound with 6 key
+            if (event.key === '6') {
+                event.preventDefault();
+                getOutSound.currentTime = 0;
+                getOutSound.play().catch(() => {});
             }
 
             // Secondary correct cue with V key (pause → reveal → continue)
