@@ -660,6 +660,14 @@
                 getOutSound.play().catch(() => {});
             }
 
+            // Skip video to 44:50 with 9 key
+            if (event.key === '9') {
+                event.preventDefault();
+                if (player) {
+                    player.seekTo((44 * 60) + 50, true);
+                }
+            }
+
             // Secondary correct cue with V key (pause → reveal → continue)
             if (event.key.toLowerCase() === 'v') {
                 event.preventDefault();

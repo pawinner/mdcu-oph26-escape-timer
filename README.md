@@ -16,3 +16,4 @@ V: Minor Correct
 H: Phone Ring for Hints  
 5: Comedy Hit SFX  
 6: Get Out! SFX  
+9: Skip to ending  
