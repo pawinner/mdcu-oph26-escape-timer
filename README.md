@@ -8,9 +8,9 @@ https://pawinner.github.io/mdcu-oph26-escape-timer/countdown
 https://drive.google.com/drive/folders/1Yp1yzdf7pqq4HPm8bgmtzuZRy6pG_fKE
 
 ## Features & Hotkeys
-P: Play/Pause + Checking Screen
-Shift + Z: -5% Penalty
-Shift + X: -20% Penalty
-Shift + C: Final Congratulations
-V: Minor Correct
-H: Phone Ring for Hints
+P: Play/Pause + Checking Screen  
+Shift + Z: -5% Penalty  
+Shift + X: -20% Penalty  
+Shift + C: Final Congratulations  
+V: Minor Correct  
+H: Phone Ring for Hints  
