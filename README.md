@@ -14,5 +14,5 @@ Shift + X: -20% Penalty
 Shift + C: Final Congratulations  
 V: Minor Correct  
 H: Phone Ring for Hints  
-5: Comedy Hit SFX
-6: Get Out! SFX
+5: Comedy Hit SFX  
+6: Get Out! SFX  
